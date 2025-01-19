@@ -30,9 +30,12 @@ jobs:
           - name: manylinux2014-x86_64
             target: x86_64-unknown-linux-gnu
             image: messense/manylinux2014-cross:x86_64
-          # - name: linux-aarch64
-          #   target: aarch64-unknown-linux-gnu
-          #   image: manylinux_2_28_aarch64
+          - name: manylinux_2_28-aarch64
+            target: aarch64-unknown-linux-gnu
+            image: messense/manylinux_2_28-cross:aarch64
+          - name: manylinux2014-aarch64
+            target: aarch64-unknown-linux-gnu
+            image: messense/manylinux2014-cross:aarch64
     env:
       TARGET: ${{ matrix.target }}
       ARCHIVE_NAME: wgpu-${{ matrix.name }}
