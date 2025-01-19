@@ -38,7 +38,7 @@ jobs:
           # The main thing we need is a newer llvm compiler
           - name: linux-aarch64
             target: aarch64-unknown-linux-gnu
-            image: quai.io/pypa/manylinux_2_28_aarch64
+            image: quay.io/pypa/manylinux_2_28_aarch64
             system_install_commands: dnf install clang-devel zip -y
     env:
       TARGET: ${{ matrix.target }}
