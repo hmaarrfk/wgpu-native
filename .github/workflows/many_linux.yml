@@ -61,6 +61,7 @@ jobs:
             export PATH=/root/.cargo/bin:\$PATH && \
             export USER=root && \
             curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none && \
+            rustup target add ${TARGET} && \
             rustup toolchain install --no-self-update $TOOLCHAIN && \
             rustup default $TOOLCHAIN && \
             rustup target list && \
