@@ -241,3 +241,66 @@ jobs:
           make run-example-compute-release
           make run-example-enumerate_adapters-release
           make run-example-push_constants-release
+
+  many_linux:
+    # Config
+    name: release - ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+            image: manylinux_2_28_x86_64
+          - name: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+            image: manylinux2014_x86_64
+          - name: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+            image: manylinux2010_x86_64
+          # - name: linux-aarch64
+          #   target: aarch64-unknown-linux-gnu
+          #   image: manylinux_2_28_aarch64
+    env:
+      TARGET: ${{ matrix.target }}
+      ARCHIVE_NAME: wgpu-${{ matrix.name }}
+      TOOLCHAIN: stable-${{ matrix.target }}
+      IMAGE: ${{ matrix.image }}
+    steps:
+      # Common part (same for nearly each build)
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set WGPU_NATIVE_VERSION
+        run: echo "WGPU_NATIVE_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+        shell: bash
+      # prepare qemu for cross-compilation
+      - name: Set up QEMU
+        if: matrix.image == 'manylinux_2_28_aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      # Build
+      - name: Build
+        run: |
+          CID=$(docker create -t -w /tmp/wgpu-native -v $PWD:/tmp/src:ro -e TARGET -e ARCHIVE_NAME -e WGPU_NATIVE_VERSION quay.io/pypa/$IMAGE bash -c "\
+            cp -r /tmp/src/. . && \
+            rm -rf ./dist && \
+            export PATH=/root/.cargo/bin:\$PATH && \
+            export USER=root && \
+            curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none && \
+            rustup toolchain install --no-self-update $TOOLCHAIN && \
+            rustup default $TOOLCHAIN && \
+            dnf install clang-devel zip -y && \
+            make package")
+          docker start -ai $CID
+          mkdir -p dist
+          docker cp $CID:/tmp/wgpu-native/dist/. dist/.
+          docker rm $CID
+      # Upload (same for each build)
+      # - name: Upload
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     path: dist
+      #     name: ${{ env.ARCHIVE_NAME }}
